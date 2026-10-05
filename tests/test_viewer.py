@@ -2575,6 +2575,62 @@ def check_next_keeps_queued_chat_reply(page, fx, base):
 
 # Every check_* function defined above runs, in file order. Add new checks as
 # functions; there is no list to edit.
+def check_lighthouse_theme_default_icon_and_favicon(page, fx, base):
+    """The lighthouse palette is on by default, with a lighthouse icon in the header and the tab."""
+    page.goto(f"{base}/viewer/?lesson={fx.slug}")
+    page.evaluate("() => localStorage.removeItem('classroom.palette')")
+    page.goto(f"{base}/viewer/?lesson={fx.slug}")
+    page.wait_for_selector("header .title .mark.lh svg", state="attached", timeout=5000)
+    assert page.evaluate("() => document.documentElement.dataset.palette") == "lighthouse"
+    page.emulate_media(color_scheme="light")
+    assert page.evaluate("() => getComputedStyle(document.body).backgroundColor") == "rgb(238, 244, 248)"
+    page.emulate_media(color_scheme="dark")
+    assert page.evaluate("() => getComputedStyle(document.body).backgroundColor") == "rgb(11, 22, 34)"
+    page.emulate_media(color_scheme="light")
+    fav = page.evaluate("() => document.querySelector('link[rel=icon]')?.href || ''")
+    assert fav.startswith("data:image/svg+xml"), fav
+
+
+def check_lighthouse_theme_switch_persists(page, fx, base):
+    """Settings > Theme switches to Classic (the original tokens) and the choice survives a reload."""
+    page.goto(f"{base}/viewer/?lesson={fx.slug}")
+    open_settings(page)
+    page.select_option("#palette", "classic")
+    assert page.evaluate("() => document.documentElement.dataset.palette") is None
+    assert page.evaluate("() => getComputedStyle(document.body).backgroundColor") == "rgb(245, 242, 255)"
+    page.reload()
+    page.wait_for_selector("#palette", state="attached")
+    assert page.evaluate("() => document.getElementById('palette').value") == "classic"
+    assert page.evaluate("() => document.documentElement.dataset.palette") is None
+    page.evaluate("() => localStorage.removeItem('classroom.palette')")
+
+
+def check_lighthouse_classic_contrast(page, fx, base):
+    """The Classic palette still passes AA when chosen (the redesign check covers Lighthouse, the default)."""
+    def run():
+        page.evaluate("() => document.documentElement.removeAttribute('data-palette')")
+        for scheme in ("light", "dark"):
+            page.emulate_media(color_scheme=scheme)
+            for name, r in page.evaluate(CONTRAST_JS).items():
+                assert r != "missing" and r >= 4.5, f"classic {scheme}: {name} {r}"
+        page.evaluate("() => document.documentElement.setAttribute('data-palette', 'lighthouse')")
+    _with_redesign_lesson(page, fx, base, run)
+
+
+def check_lighthouse_beam_while_reading(page, fx, base):
+    """The beam turns on while something is read aloud and off again when reading ends."""
+    page.goto(f"{base}/viewer/?lesson={fx.slug}")
+    page.wait_for_selector("header .title .mark.lh", state="attached")
+    page.wait_for_selector("main section", timeout=10000)
+    page.evaluate("""() => { window.__lhOn = false; const m = document.querySelector('header .title .mark');
+        new MutationObserver(() => { if (m.classList.contains('on')) window.__lhOn = true; })
+          .observe(m, { attributes: true, attributeFilter: ['class'] }); }""")
+    page.click("#btn-play")
+    page.wait_for_function("() => window.__lhOn === true", timeout=5000)
+    page.click("#btn-stop")
+    page.wait_for_function("() => !document.querySelector('header .title .mark').classList.contains('on')", timeout=5000)
+
+
 CHECKS = [f for name, f in list(globals().items()) if name.startswith("check_") and callable(f)]
 
 
