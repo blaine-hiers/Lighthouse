@@ -1,7 +1,14 @@
+<p align="center"><img src="docs/images/lighthouse.svg" width="96" alt="Lighthouse icon"></p>
+
 # Classroom
 
 A personal learning environment for Claude Code, built around one way of
 learning: **listen and see first, then do it yourself.**
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/viewer-dark.png">
+  <img src="docs/images/viewer-light.png" alt="The lesson viewer: a lesson section with a diagram on the left, and the chat with a graded quiz on the right">
+</picture>
 
 Open Claude Code in this repo and say **"teach me ___"**. Claude will:
 
@@ -16,6 +23,10 @@ Open Claude Code in this repo and say **"teach me ___"**. Claude will:
    - **Check**: a quick graded question in chat.
 
 ## The lesson viewer
+
+| Light | Dark |
+|---|---|
+| ![Viewer in light mode](docs/images/viewer-light.png) | ![Viewer in dark mode](docs/images/viewer-dark.png) |
 
 `viewer/index.html` is a page served locally (`python viewer/serve.py 8765`
 from the repo root; Claude starts it for you). It displays
