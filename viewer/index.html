@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classroom</title>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<style>
+  /* ===================================================================
+     Design tokens ("Bold & playful", #43). Every colour in the viewer comes
+     from these variables, so features should use them and never hard-code
+     colours. Every text/background pair below reaches WCAG AA (4.5:1);
+     the test suite checks it in light and dark.
+
+       --bg / --surface        page background / card background
+       --text / --muted        body text / secondary text (both AA on --bg and --surface)
+       --border                hairlines and card outlines (decorative)
+       --border-strong         outline of buttons, chips and inputs (3:1 against --surface)
+       --accent / --accent-text  primary colour (vivid violet) and the text that goes ON it
+       --accent-dark           bottom edge of primary buttons (the "3D" lip)
+       --accent-soft           pale tint of the accent, for chips and bubbles (--text on it is AA)
+       --accent-2 / --accent-2-text  warm secondary colour (orange) and text ON it
+       --accent-2-soft         pale warm tint (--text on it is AA)
+       --success / --success-text / --success-soft    right answers, done, progress
+       --danger  / --danger-text  / --danger-soft     wrong answers, warnings
+       --step-1..4 / --step-text   the cycling colours of the STEP n badges (text ON them is --step-text)
+       --speaking              highlight behind the sentence being read aloud
+       --code-bg               code and quiet panels
+       --card-shadow           shadow for any raised card
+       --radius                corner radius for cards (18px); pills use 999px
+     =================================================================== */
+  :root {
+    color-scheme: light;
+    --bg: #f5f2ff; --surface: #ffffff; --text: #1d1a2f; --muted: #57526f;
+    --border: #ddd6f3; --border-strong: #837aad;
+    --accent: #5a38d6; --accent-text: #ffffff; --accent-dark: #3d229f; --accent-soft: #ece7ff;
+    --accent-2: #c2410c; --accent-2-text: #ffffff; --accent-2-soft: #ffeedd;
+    --success: #107a55; --success-text: #ffffff; --success-soft: #dcf5ea;
+    --danger: #c42b2b; --danger-text: #ffffff; --danger-soft: #fde4e4;
+    --step-1: #5a38d6; --step-2: #0b7a8f; --step-3: #b83280; --step-4: #b45309; --step-text: #ffffff;
+    --speaking: #ffeaa0; --code-bg: #f0ecfb;
+    --card-shadow: 0 2px 4px rgba(60, 40, 140, .06), 0 10px 28px rgba(60, 40, 140, .10);
+    --radius: 18px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #15121f; --surface: #201c2f; --text: #efecfa; --muted: #b3adc9;
+      --border: #373150; --border-strong: #7f77ab;
+      --accent: #a99bff; --accent-text: #150f33; --accent-dark: #6f5fd1; --accent-soft: #2e2752;
+      --accent-2: #ffab5e; --accent-2-text: #2b1300; --accent-2-soft: #3a2a1c;
+      --success: #4fdca5; --success-text: #00241a; --success-soft: #153a2e;
+      --danger: #ff8f8f; --danger-text: #3a0000; --danger-soft: #402023;
+      --step-1: #a99bff; --step-2: #4fd1e6; --step-3: #ff8fc8; --step-4: #ffbe5e; --step-text: #14101f;
+      --speaking: #4a4018; --code-bg: #2a2540;
+      --card-shadow: 0 2px 4px rgba(0, 0, 0, .3), 0 10px 28px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #15121f; --surface: #201c2f; --text: #efecfa; --muted: #b3adc9;
+    --border: #373150; --border-strong: #7f77ab;
+    --accent: #a99bff; --accent-text: #150f33; --accent-dark: #6f5fd1; --accent-soft: #2e2752;
+    --accent-2: #ffab5e; --accent-2-text: #2b1300; --accent-2-soft: #3a2a1c;
+    --success: #4fdca5; --success-text: #00241a; --success-soft: #153a2e;
+    --danger: #ff8f8f; --danger-text: #3a0000; --danger-soft: #402023;
+    --step-1: #a99bff; --step-2: #4fd1e6; --step-3: #ff8fc8; --step-4: #ffbe5e; --step-text: #14101f;
+    --speaking: #4a4018; --code-bg: #2a2540;
+    --card-shadow: 0 2px 4px rgba(0, 0, 0, .3), 0 10px 28px rgba(0, 0, 0, .35);
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 18px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  :focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+
+  /* ---------- header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 10; background: var(--surface);
+    border-bottom: 1px solid var(--border); box-shadow: 0 4px 14px rgba(60, 40, 140, .08);
+    padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center;
+  }
+  header .title { font-weight: 800; font-size: 1.15em; margin-right: auto; display: inline-flex; gap: 8px; align-items: center; }
+  header .title .mark { font-size: 1.3em; line-height: 1; }
+  .bar-group { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #controls { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  /* Base look for every button/select, at zero specificity so any feature's own rule wins.
+     The big friendly size is only for header controls, the settings popover and .btn. */
+  :where(button, select) {
+    font: inherit; font-size: 15px; font-weight: 600; border: 2px solid var(--border-strong);
+    background: var(--surface); color: var(--text); border-radius: 999px;
+    padding: 4px 14px; cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  :where(header button, .btn, #settings-pop button) { min-height: 40px; padding: 6px 16px; }
+  :where(button):hover, header a.home:hover, header a.btn-link:hover { border-color: var(--accent); }
+  :where(button):active { transform: translateY(2px); }
+  :where(button).primary, #btn-play {
+    background: var(--accent); color: var(--accent-text); border-color: var(--accent);
+    box-shadow: 0 3px 0 var(--accent-dark); font-weight: 700;
+  }
+  :where(button).primary:active, #btn-play:active { box-shadow: 0 1px 0 var(--accent-dark); transform: translateY(2px); }
+  header a.home, header a.btn-link {
+    font: inherit; font-size: 15px; font-weight: 600; color: var(--text); text-decoration: none;
+    border: 2px solid var(--border-strong); border-radius: 999px; padding: 6px 16px; min-height: 40px;
+    display: inline-flex; align-items: center; background: var(--surface);
+  }
+  label { font-size: 15px; color: var(--muted); display: inline-flex; gap: 8px; align-items: center; }
+  input[type="checkbox"], input[type="range"] { accent-color: var(--accent); }
+  input[type="checkbox"] { width: 20px; height: 20px; }
+  :where(select) { max-width: 260px; border-radius: 12px; font-weight: 500; padding: 6px 12px; min-height: 40px; }
+  /* Auto-read toggles stay in the bar as chips: "is it reading to me?" is a primary state. */
+  .chip-toggle { border: 2px solid var(--border-strong); border-radius: 999px; padding: 6px 14px; min-height: 40px;
+    color: var(--text); font-weight: 600; cursor: pointer; background: var(--surface); }
+  .chip-toggle:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); }
+  .chip-toggle input { width: 18px; height: 18px; }
+  /* The "use Edge" tip is moved into Settings by features/17-look-and-feel.js. */
+  #settings-body #edge-tip { background: var(--accent-2-soft); color: var(--text); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+  #settings-body #edge-tip p { margin: 0 0 6px; }
+  #settings-body #edge-tip button { background: none; border: 0; padding: 0; min-height: 0; color: var(--accent); text-decoration: underline; }
+
+  /* Settings popover: the less-used controls live here (Classroom.addSetting). */
+  .settings-wrap { position: relative; display: inline-block; }
+  #btn-settings[aria-expanded="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  #settings-pop {
+    position: fixed; right: 16px; top: 64px; z-index: 30; /* top is set from the header height in JS */
+    width: min(380px, calc(100vw - 32px)); max-height: calc(100vh - 100px); overflow-y: auto;
+    background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--card-shadow); padding: 14px 18px 18px;
+  }
+  #settings-pop[hidden] { display: none; }
+  #settings-pop h3 { margin: 0 0 10px; font-size: 17px; font-weight: 800; }
+  #settings-body { display: flex; flex-direction: column; gap: 14px; }
+  #settings-body > label, #settings-body .kk-wrap > label { color: var(--text); font-weight: 500; width: 100%; }
+  #settings-body label:has(select), #settings-body label:has(input[type="range"]) { justify-content: space-between; }
+  #settings-body select { flex: 1; min-width: 0; max-width: 100%; }
+  #settings-body input[type="range"] { flex: 1; min-width: 0; }
+  #settings-body > button { align-self: flex-start; }
+
+  /* ---------- layout ---------- */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 24px;
+    max-width: 1340px; margin: 0 auto; padding: 0 16px; }
+  .layout.no-chat { grid-template-columns: minmax(0, 820px); justify-content: center; }
+  .layout.no-chat aside { display: none; }
+  main { padding: 16px 0 40vh; min-width: 0; }
+  @media (max-width: 1000px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    aside { position: static; height: auto; max-height: 70vh; }
+  }
+
+  /* ---------- chat panel ---------- */
+  aside {
+    position: sticky; top: 74px; align-self: start; height: calc(100vh - 90px);
+    margin-top: 18px; display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--card-shadow); overflow: hidden;
+  }
+  aside h3 { margin: 0; padding: 12px 18px; font-size: 16px; color: var(--text);
+    border-bottom: 1px solid var(--border); font-weight: 800; background: var(--accent-soft); }
+  aside h3::before { content: "💬 "; }
+  #chat-log { overflow-y: auto; padding: 8px 14px 16px; flex: 1; font-size: 16px; }
+  #chat-log .hint { color: var(--muted); font-size: 14px; }
+  .msg { margin: 12px 0; padding: 10px 16px; border-radius: 18px; }
+  .msg > :first-child { margin-top: 0; } .msg > :last-child { margin-bottom: 0; }
+  .msg.you { background: var(--accent); color: var(--accent-text); margin-left: 15%; white-space: pre-wrap;
+    border-bottom-right-radius: 6px; }
+  .msg.claude { background: var(--accent-soft); color: var(--text); border-bottom-left-radius: 6px; }
+  .msg.quiz { background: var(--surface); border: 3px solid var(--accent-2); box-shadow: var(--card-shadow); }
+  .quiz-q .chip { display: inline-block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+    background: var(--accent-2); color: var(--accent-2-text); font-weight: 800; padding: 2px 10px; border-radius: 999px; }
+  .quiz-q p { margin: 6px 0 6px; font-weight: 700; }
+  .quiz-q ol { margin: 0 0 8px; padding-left: 22px; }
+  .quiz-q li { margin: 4px 0; }
+  .quiz-q li small { display: block; color: var(--muted); }
+  .quiz-q li.chosen { font-weight: 800; background: var(--success-soft); border-radius: 8px; padding: 2px 8px; }
+  .quiz-q li.chosen::marker { color: var(--success); }
+  .quiz-q li.chosen small, .quiz-q.confidence li.chosen small { font-weight: 500; color: inherit; }
+  .quiz-q .other { color: var(--muted); font-size: 14px; }
+  .quiz .answer-here { color: var(--muted); font-size: 13px; }
+
+  /* ---------- lesson cards ---------- */
+  section {
+    --step: var(--step-1);
+    background: var(--surface); border: 1px solid var(--border); border-top: 6px solid var(--step);
+    border-radius: var(--radius); box-shadow: var(--card-shadow);
+    padding: 6px 28px 18px; margin: 22px 0;
+  }
+  main section:nth-of-type(4n+2) { --step: var(--step-2); }
+  main section:nth-of-type(4n+3) { --step: var(--step-3); }
+  main section:nth-of-type(4n+4) { --step: var(--step-4); }
+  section > .section-head { display: flex; align-items: center; gap: 12px; }
+  section > .section-head h2 { flex: 1; }
+  /* The badge is CSS only, so it never changes the heading text that gets read aloud. */
+  section > .section-head h2::before {
+    content: "STEP " attr(data-step); display: block; width: fit-content; margin-bottom: 6px;
+    background: var(--step); color: var(--step-text); font-size: 12px; font-weight: 800;
+    letter-spacing: .08em; padding: 2px 12px; border-radius: 999px; line-height: 1.6;
+  }
+  .play-section { width: 44px; height: 44px; padding: 0; flex: none; background: var(--accent-soft);
+    border-color: var(--accent-soft); color: var(--accent); }
+  .play-section:hover { border-color: var(--accent); }
+  h1 { font-size: 1.9em; font-weight: 800; margin: 14px 0 0; line-height: 1.25; }
+  h2 { font-size: 1.4em; font-weight: 800; margin: 14px 0 8px; line-height: 1.25; }
+  .speaking { background: var(--speaking); border-radius: 8px; box-shadow: 0 0 0 4px var(--speaking); }
+  pre, code { background: var(--code-bg); border-radius: 8px; font-size: 0.88em; }
+  code { padding: 1px 6px; }
+  pre { padding: 14px; overflow-x: auto; border-radius: 12px; }
+  pre code { padding: 0; background: none; }
+  .mermaid { text-align: center; margin: 14px 0; overflow-x: auto; }
+  table { border-collapse: collapse; margin: 10px 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 6px 10px; }
+  th { background: var(--accent-soft); }
+  img, svg { max-width: 100%; }
+  blockquote { margin: 12px 0; padding: 4px 16px; border-left: 5px solid var(--accent); background: var(--accent-soft); border-radius: 0 12px 12px 0; }
+  details { color: var(--muted); margin: 10px 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  a { color: var(--accent); }
+  .empty { color: var(--muted); text-align: center; margin-top: 20vh; }
+
+  /* "Your turn" / "Try it" blocks (class added by features/17-look-and-feel.js) */
+  .your-turn, blockquote.your-turn { position: relative; margin: 18px 0; padding: 14px 18px 14px 64px; border-radius: 16px;
+    background: var(--accent-2-soft); color: var(--text); border: 2px dashed var(--accent-2); }
+  .your-turn > :first-child { margin-top: 0; } .your-turn > :last-child { margin-bottom: 0; }
+  .your-turn::before { content: "✋"; position: absolute; left: 14px; top: 12px; width: 38px; height: 38px;
+    border-radius: 50%; background: var(--accent-2); display: grid; place-items: center; font-size: 20px; line-height: 1; }
+  .your-turn.try-it::before { content: "🚀"; }
+
+  /* ---------- lesson list ---------- */
+  ul.lesson-list { list-style: none; padding: 0; display: grid; gap: 16px; margin: 18px 0; }
+  ul.lesson-list li { --step: var(--step-1); }
+  ul.lesson-list li:nth-child(4n+2) { --step: var(--step-2); }
+  ul.lesson-list li:nth-child(4n+3) { --step: var(--step-3); }
+  ul.lesson-list li:nth-child(4n+4) { --step: var(--step-4); }
+  ul.lesson-list a { display: flex; align-items: center; gap: 18px; padding: 22px 24px; background: var(--surface);
+    border: 1px solid var(--border); border-left: 10px solid var(--step); border-radius: var(--radius);
+    box-shadow: var(--card-shadow); color: var(--text); text-decoration: none; font-size: 1.15em; font-weight: 700;
+    transition: transform .15s ease, box-shadow .15s ease; }
+  ul.lesson-list a::before { content: "📘"; flex: none; width: 52px; height: 52px; border-radius: 16px;
+    display: grid; place-items: center; font-size: 28px; background: var(--step); }
+  ul.lesson-list a .badge { order: 3; margin-left: auto; float: none; opacity: 1; font-size: 13px; font-weight: 800;
+    letter-spacing: .04em; text-transform: uppercase; padding: 3px 12px; border: 0; border-radius: 999px;
+    background: var(--accent-2-soft); color: var(--text); }
+  ul.lesson-list a .badge.finished { background: var(--success-soft); }
+  ul.lesson-list a:hover { transform: translateY(-3px); border-color: var(--step); }
+
+  @media (max-width: 700px) { header { position: static; } }  /* the wrapped bar is too tall to keep pinned on a phone */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    button:active, ul.lesson-list a:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a id="home" class="home" href="./" title="Back to the list of lessons">← Lessons</a>
+  <span class="title"><span class="mark" aria-hidden="true">🎓</span><span id="title">Classroom</span></span>
+  <span class="bar-group" id="transport">
+    <button class="primary" id="btn-play" title="Read from the current section to the end">▶ Play</button>
+    <button id="btn-pause">⏸ Pause</button>
+    <button id="btn-stop">⏹ Stop</button>
+  </span>
+  <span class="bar-group" id="toggles">
+    <label class="chip-toggle" title="Read each new lesson section aloud as soon as it appears"><input type="checkbox" id="auto"> 🔊 Read new sections</label>
+    <label class="chip-toggle" title="Read Claude's chat replies and quiz questions aloud as they arrive"><input type="checkbox" id="auto-chat"> 🔊 Read chat</label>
+  </span>
+  <span id="controls"></span>
+  <span class="settings-wrap">
+    <button id="btn-settings" aria-expanded="false" aria-controls="settings-pop" title="Voice, speed and reading options">⚙ Settings</button>
+    <div id="settings-pop" role="dialog" aria-label="Settings" hidden>
+      <h3>Settings</h3>
+      <div id="settings-body">
+        <label>Voice <select id="voice"></select></label>
+        <label>Speed <input type="range" id="rate" min="0.6" max="1.6" step="0.1"> <span id="rate-val"></span></label>
+      </div>
+    </div>
+  </span>
+</header>
+<div class="layout" id="layout">
+  <main id="main"><p class="empty">Loading…</p></main>
+  <aside>
+    <h3>Chat with Claude</h3>
+    <div id="chat-log"><p class="hint">Claude's replies and quiz questions show up here. Answer them in the terminal.</p></div>
+  </aside>
+</div>
+
+<script defer src="core.js"></script>
+<!-- One file per feature; each extends the viewer through window.Classroom (see core.js). -->
+<script defer src="features/01-hint-ladder.js"></script>
+<script defer src="features/02-recall-confidence.js"></script>
+<script defer src="features/03-faded-practice.js"></script>
+<script defer src="features/04-skip-known.js"></script>
+<script defer src="features/05-voice-answers.js"></script>
+<script defer src="features/06-natural-voices.js"></script>
+<script defer src="features/07-spaced-review.js"></script>
+<script defer src="features/08-two-voice.js"></script>
+<script defer src="features/09-python-runner.js"></script>
+<script defer src="features/10-progress-map.js"></script>
+<script defer src="features/11-offline-voices.js"></script>
+<script defer src="features/12-page-answers.js"></script>
+<script defer src="features/13-animated-visuals.js"></script>
+<script defer src="features/14-resume-profile.js"></script>
+<script defer src="features/15-chat-reading.js"></script>
+<script defer src="features/16-diagram-view.js"></script>
+<script defer src="features/17-look-and-feel.js"></script>
+<script defer src="features/18-progress-wins.js"></script>
+<script defer src="features/19-focus-mode.js"></script>
+<script defer src="features/20-code-format.js"></script>
+</body>
+</html>

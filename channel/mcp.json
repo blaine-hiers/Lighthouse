@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "classroom": {
+      "command": "node",
+      "args": ["channel/server.js"],
+      "env": { "CLASSROOM_CHANNEL": "${CLASSROOM_CHANNEL:-off}" }
+    }
+  }
+}
